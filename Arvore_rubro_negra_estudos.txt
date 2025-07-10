@@ -1,0 +1,97 @@
+Árvore Binária de buscas balanceadas:
+    - Numa árvore binária de busca com n chaves e de altura h , as operações de busca, inserção e remoção
+tem complexidade de tempo O(h);
+
+° No pior caso , a altura de uma árvore binária de busca pode ser O(n);
+° No caso médio, a altura de uma árvore binária de busca é O(log n); 
+
+° Árvore rubro negra possui altura máxima de 2log(n+1)
+
+Árvore Rubro Negra:
+    - Uma árvore binária de busca em que cada nó é constituido dos seguintes campos:
+        * Cor(1bit): pode ser vermelha ou preta;
+        * Key(data): indica o valor de uma chave;
+        * left,right: ponteiros que apontam para a subárvore esquerda e direita;
+        * pai: Ponteiro que aponta para o nó pai. O campo pai do nó raiz aponta para NULL.
+
+Propriedades da Árvore Rubro Negra:
+    - Quando um nó não possui filho (esquerdo ou direito), então vamos supor que ele aponta para um nó
+fictício, que será a folha da árvore. Assim todos os nós internos contém chaves e todas as folhas são nós
+fictícios.
+        * Todo nó da árvore ou é vermelho ou é preto;
+        * A raiz é preta;
+        * Toda folha (NULL) é preta;
+        * Se um nó é vermelho, então ambos os filhos são pretos.
+        * Para todo nó, todos os caminhos do nó até as folhas descendentes contém o mesmo número de nós
+pretos.
+
+        * Para economizar espaço, ao invés de representarmos todas as folhas pretas, podemos fazer todos
+os ponteiros NULL apontarem para uma mesma folhar, chamada de sentinela
+
+
+Algoritmo de inserção:
+    - O Algoritmo de inserção substitui um nó sentinela (preto) por um novo nó interno vermelho z
+contendo o valor novo inserido. Este nó aponta para 2 sentinelas(preto), à esquerda e à direita.
+
+    - Após a inserção teremos alguns erros. Para conserta-los, utilizamos do algoritmo RB-insert-fixup.
+
+    - Sempre inserimos nós vermelhos. (Violação vermelha é mais fácil de ser resolvida).
+
+° Casos de Violação:
+    - Pai e Tio vermelhos:
+        * Isso implica que o avô é preto.
+        * Solução: trocar as cores do avô, pai e tio e continuar percorrendo o caminho da inserção no
+sentido inverso à procura de mais violações.
+
+    - Irmãos com cores diferentes e pai vermelho:
+        * Caso resolvido por rotação simples.
+        * Nó que rotacionou pode virar o raiz (preto) e o seu novo filho recebe cor vermelha.
+
+    - Irmãos com cores diferentes e pai preto:
+        * Caso resolvido por rotação dupla.
+        * Não se muda cor na primeria rotação. Há mudança de cor na segunda rotação.
+
+Algoritmo RB-insert-fixup:
+    - No incio no laço while temos 3 invariantes:
+        * nó z é vermelho;
+        * se pai[z] é a raiz, então pai[z] é preto
+        *Apenas uma propriedade (2 ou 4) pode estar violada. Se for a propriedade 2, então é porque z
+(vermelho) é a raiz. Se a propriedade violada é a 4, então é porque z e pai[z] são ambos vermelhos.
+
+Remoção na árvore Rubro Negra:
+    - Se nó removido for vermelho, não há problema pois não ocorrerá Violação vermelha;
+    - Se nó preto for removido, teremos uma violação preta ou vermelha;
+    - Se o nó removido possuir apenas 1 filho não nulo, ele pode ser substituido por esse filho;
+    - Se o nó não possuir nenhum filho não nulo, ele pode ser substituido por um nó nulo.
+
+° Casos de Violação:
+    - Nó removido preto com filho vermelho:
+        * Pode-se colorir esse filho vermelho de preto, sem nenhuma violação;
+        * Se o nó possui dois filhos, encontra-se seu sucessor e copia seu dado para o nó a ser removido.
+    
+    - Irmão preto e sobrinho preto:
+        * Se um nó é removido e tem irmão e sobrinhos pretos, colore-se o irmão de vermelho;
+        * Se o pai do nó removido era vermelho, pode-se colorir o irmão de vermelho e o pai de preto.
+
+    - Irmão preto e sobrinho(s) vermelho(s):
+        * Dois subcasos distintos:
+            > Sobrinho da esquerda for vermelho: rotação simples (seu pai poderia ser vermelho ou preto.
+guardar cor para recuperar depois). Depois da rotação, o novo pai é recolorido com sua cor original e 
+seus filhos se tornam pretos;
+            > Sobrinho da direita for vermelho: Rotação dupla.
+
+    - Irmão do nó removido é vermelho:
+        * requer pelo menos uma rotação. Se irmão for vermelho, seus sobrinhos sao pretos e uma rotação
+simples, recolorir o novo pai de preto e recolorir o filho da direita do sobrinho de vermelho ajeita
+a arvore.
+        * Segundo caso considera o filho não nulo do irmão: testa-se um de seus filhos e age de acordo
+com qual deles é vermelho, se o outro for vermelho executa-se uma rotação dupla, colore-se seu novo pai
+de preto, seu filho da direita com preto e seu filho da esquerda de vermelho.
+
+
+
+    -O algoritmo de remoção RB-delete remove o nó de forma análoga ao algoritmo de remoção em
+uma árvore binária de busca
+    -No final da remoção o algoritmo chama RB-delete-fixup que, caso necessário, muda as cores
+de alguns nós e re-estrutura a árvore por meio de rotações. O algoritmo éum pouco mais complexo
+que a inserção e há 4 casos a considerar.
