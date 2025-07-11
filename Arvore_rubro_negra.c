@@ -3,8 +3,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define BLACK 0
+#define RED 1
+
 typedef struct tagNode {
     int size;
+    int color; //Adicionei para que haja a mudança de cores, quando houver o balanceamento conseguir fazer a mudança
     char *data;
     int level;
     struct tagNode *parent;
@@ -20,7 +24,8 @@ typedef struct tagBinaryTree {
     int (*comparacao)(char *data1, char *data2);
 } TBinaryTree;
 
-bool TNode_create(TNode **node,char *data, int size,int level, TNode *parent);
+
+bool TNode_create(TNode **node,char *data, int size,int level, TNode *parent); //preciso adicionar o parametro de cor nessa função
 void TNode_destroy(TNode *node);
 void TNode_setParent(TNode *node,TNode *parent);
 TNode *TNode_getParent(TNode *node);
@@ -34,6 +39,7 @@ char *TNode_getData(TNode *node);
 int TNode_getSize(TNode *node);
 void TNode_show(TNode *node);
 bool TNode_hasChildren(TNode *node);
+void TNode_trocaCor(TNode *node);
 
 
 
@@ -129,6 +135,18 @@ void TNode_printLevel(TNode *node, int level,void (*print)(char *data)){
     else {
         TNode_printLevel(node->left,level,print);
         TNode_printLevel(node->right,level,print);
+    }
+}
+
+void TNode_trocaCor(TNode *node){
+    node->color = !node->color;
+
+    if(node->left != NULL){
+        node->left->color = !(node->left->color);
+    }
+
+    if(node->right != NULL){
+        node->right->color = !(node->right->color);
     }
 }
 
