@@ -182,6 +182,36 @@ void rotacaoDir(TNode **node){ //Faz a rotação a direita
 
 }
 
+void rotacaoEsq(TNode **node){
+
+    if(node == NULL){
+        return;
+    }
+
+    if(*node == NULL){
+        return;
+    }
+
+    TNode *node_aux = *node;
+
+    *node = node_aux->right;
+    node_aux->right = (*node)->left;
+    (*node)->left = node_aux;
+
+    (*node)->parent = node_aux->parent;
+
+    if(node_aux->right != NULL){
+        (node_aux->right)->parent = node_aux;
+    }
+
+    node_aux->parent = *node;
+
+    //mudança das cores do novo topo para o antigo
+    (*node)->color = node_aux->color;
+    node_aux->color = RED;
+
+}
+
 bool TBinaryTree_create(TBinaryTree *tree,char *data,int dataSize,int (*comparacao)(char *data1, char *data2)) {
     if(data != NULL && dataSize > 0) {
         if(TNode_create(&(tree->root),data,dataSize,0,NULL,1)) {
