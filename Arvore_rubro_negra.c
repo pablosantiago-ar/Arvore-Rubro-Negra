@@ -25,7 +25,7 @@ typedef struct tagBinaryTree {
 } TBinaryTree;
 
 
-bool TNode_create(TNode **node,char *data, int size,int level, TNode *parent); //preciso adicionar o parametro de cor nessa função
+bool TNode_create(TNode **node,char *data, int size,int level, TNode *parent, int cor); //preciso adicionar o parametro de cor nessa função
 void TNode_destroy(TNode *node);
 void TNode_setParent(TNode *node,TNode *parent);
 TNode *TNode_getParent(TNode *node);
@@ -41,7 +41,8 @@ void TNode_show(TNode *node);
 bool TNode_hasChildren(TNode *node);
 void TNode_trocaCor(TNode *node);
 
-
+void rotacaoDir(TNode **node);
+void rotacaoEsq(TNode **node);
 
 bool TBinaryTree_create(TBinaryTree *tree,char *data,int dataSize,int (*comparacao)(char *data1, char *data2));
 void TBinaryTree_destroy(TBinaryTree *tree);
@@ -52,7 +53,7 @@ void TBinaryTree_show(TBinaryTree *tree, void (*print)(char *data));
 bool TBinaryTree_search(TBinaryTree *tree, char *data);
 bool TBinaryTree_delete(TBinaryTree *tree, char *data,bool allNodes);
 
-bool TNode_create(TNode **node,char *data, int size,int level,TNode *parent) {
+bool TNode_create(TNode **node,char *data, int size,int level,TNode *parent, int cor) {
     if(((*node) = malloc(sizeof(TNode))) != NULL) {
         if(((*node)->data = malloc(size)) != NULL) {
             memcpy((*node)->data,data,size);
@@ -61,6 +62,7 @@ bool TNode_create(TNode **node,char *data, int size,int level,TNode *parent) {
             (*node)->level  = level;
             (*node)->left = NULL;
             (*node)->right = NULL;
+            (*node)->color = RED;
         } else {
             free(*node);
             return false;
@@ -150,9 +152,39 @@ void TNode_trocaCor(TNode *node){
     }
 }
 
+void rotacaoDir(TNode **node){ //Faz a rotação a direita
+    if(node == NULL){
+        return;
+    }
+
+    if(*node == NULL){
+        return;
+    }
+
+    TNode *node_aux = *node;
+    
+    //operações de ponteiro para fazer a troca
+    *node = node_aux->left;
+    node_aux->left = (*node)->right;
+    (*node)->right = node_aux;
+
+    (*node)->parent = node_aux->parent;
+
+    if(node_aux->left != NULL){
+        (node_aux->left)->parent = node_aux;
+    }
+
+    node_aux->parent = *node;
+
+    //mudança das cores do novo topo para o antigo
+    (*node)->color = node_aux->color;
+    node_aux->color = RED;
+
+}
+
 bool TBinaryTree_create(TBinaryTree *tree,char *data,int dataSize,int (*comparacao)(char *data1, char *data2)) {
     if(data != NULL && dataSize > 0) {
-        if(TNode_create(&(tree->root),data,dataSize,0,NULL)) {
+        if(TNode_create(&(tree->root),data,dataSize,0,NULL,1)) {
             tree->comparacao = comparacao;
             tree->numberNodes = 1;
             tree->dataSize = dataSize;
@@ -174,7 +206,7 @@ void TBinaryTree_destroy(TBinaryTree *tree){
 bool TBinaryTree_add(TBinaryTree *tree,char *data){
     TNode *node;
     if(data != NULL){
-        TNode_create(&node,data,tree->dataSize,0,NULL);
+        TNode_create(&node,data,tree->dataSize,0,NULL, 1);
         bool result = TBinaryTree_addNode(tree,tree->root, node,0);
         if(result == false){
             TNode_destroy(node);
