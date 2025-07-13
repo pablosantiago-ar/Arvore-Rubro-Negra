@@ -135,6 +135,7 @@ void TNode_printLevel(TNode *node, int level,void (*print)(char *data)){
     }
     if(node->level == level){ 
         print(node->data);
+        printf(" %d",node->color);
     }
     else {
         TNode_printLevel(node->left,level,print);
@@ -157,63 +158,64 @@ void TNode_trocaCor(TNode *node){
 
 
 void rotacaoDir(TNode **node){ //Faz a rotação a direita
-    if(node == NULL){
-        return;
-    }
-    
-    if(*node == NULL){
+    if (node == NULL || *node == NULL || (*node)->left == NULL) {
         return;
     }
 
-    
     TNode *node_aux = *node;
-    
-    //operações de ponteiro para fazer a troca
-    *node = node_aux->left;
-    node_aux->left = (*node)->right;
-    (*node)->right = node_aux;
-    
-    (*node)->parent = node_aux->parent;
-    
-    if(node_aux->left != NULL){
-        (node_aux->left)->parent = node_aux;
+    TNode *filho_esq = node_aux->left;
+
+    node_aux->left = filho_esq->right;
+    if (filho_esq->right != NULL) {
+        filho_esq->right->parent = node_aux;
     }
+
+    filho_esq->parent = node_aux->parent;
     
-    node_aux->parent = *node;
+    // Atualiza o ponteiro do pai para apontar para o novo topo da sub-árvore
+    if (node_aux->parent == NULL) {
+        // Se node_aux era a raiz, não há o que fazer aqui. O chamador cuidará da raiz da árvore.
+    } else if (node_aux == node_aux->parent->right) {
+        node_aux->parent->right = filho_esq;
+    } else {
+        node_aux->parent->left = filho_esq;
+    }
+
+    filho_esq->right = node_aux;
+    node_aux->parent = filho_esq;
     
-    //mudança das cores do novo topo para o antigo
-    (*node)->color = node_aux->color;
-    node_aux->color = RED;
+    *node = filho_esq; // Atualiza o ponteiro original para o novo topo
     
 }
 
 void rotacaoEsq(TNode **node){
-    
-    if(node == NULL){
-        return;
-    }
-    
-    if(*node == NULL){
+if (node == NULL || *node == NULL || (*node)->left == NULL) {
         return;
     }
 
     TNode *node_aux = *node;
-    
-    *node = node_aux->right;
-    node_aux->right = (*node)->left;
-    (*node)->left = node_aux;
-    
-    (*node)->parent = node_aux->parent;
-    
-    if(node_aux->right != NULL){
-        (node_aux->right)->parent = node_aux;
+    TNode *filho_dir = node_aux->right;
+
+    node_aux->right = filho_dir->left;
+    if (filho_dir->left != NULL) {
+        filho_dir->left->parent = node_aux;
     }
+
+    filho_dir->parent = node_aux->parent;
     
-    node_aux->parent = *node;
+    // Atualiza o ponteiro do pai para apontar para o novo topo da sub-árvore
+    if (node_aux->parent == NULL) {
+        // Se node_aux era a raiz, não há o que fazer aqui. O chamador cuidará da raiz da árvore.
+    } else if (node_aux == node_aux->parent->left) {
+        node_aux->parent->left = filho_dir;
+    } else {
+        node_aux->parent->right = filho_dir;
+    }
+
+    filho_dir->left = node_aux;
+    node_aux->parent = filho_dir;
     
-    //mudança das cores do novo topo para o antigo
-    (*node)->color = node_aux->color;
-    node_aux->color = RED;
+    *node = filho_dir; // Atualiza o ponteiro original para o novo topo
     
 }
 
@@ -248,6 +250,61 @@ void TBinaryTree_destroy(TBinaryTree *tree){
     tree->deepth = 0;
 }
 
+// Nova função para corrigir a árvore após inserção
+void RB_insert_fixup(TBinaryTree *tree, TNode *z) {
+    TNode *tio;
+
+    // O loop continua enquanto o pai de 'z' for VERMELHO
+    while (z->parent != NULL && z->parent->color == RED) {
+        // Pai é filho à esquerda do avô
+        if (z->parent == z->parent->parent->left) {
+            tio = z->parent->parent->right;
+            // CASO 1: Tio é VERMELHO
+            if (tio != NULL && tio->color == RED) {
+                z->parent->color = BLACK;
+                tio->color = BLACK;
+                z->parent->parent->color = RED;
+                z = z->parent->parent; // Move para o avô e continua a verificação
+            } else {
+                // CASO 2: Tio é PRETO e 'z' é filho à direita (triângulo)
+                if (z == z->parent->right) {
+                    z = z->parent;
+                    rotacaoEsq(&z); // Rotaciona no pai para transformar em CASO 3
+                }
+                // CASO 3: Tio é PRETO e 'z' é filho à esquerda (linha)
+                z->parent->color = BLACK;
+                z->parent->parent->color = RED;
+                rotacaoDir(&(z->parent->parent));
+            }
+        } else { // Pai é filho à direita do avô (lógica espelhada)
+            tio = z->parent->parent->left;
+            // CASO 1: Tio é VERMELHO
+            if (tio != NULL && tio->color == RED) {
+                z->parent->color = BLACK;
+                tio->color = BLACK;
+                z->parent->parent->color = RED;
+                z = z->parent->parent;
+            } else {
+                // CASO 2: Tio é PRETO e 'z' é filho à esquerda (triângulo)
+                if (z == z->parent->left) {
+                    z = z->parent;
+                    rotacaoDir(&z);
+                }
+                // CASO 3: Tio é PRETO e 'z' é filho à direita (linha)
+                z->parent->color = BLACK;
+                z->parent->parent->color = RED;
+                rotacaoEsq(&(z->parent->parent));
+            }
+        }
+        // Se z chegou na raiz, sai do loop
+        if (z == tree->root) {
+            break;
+        }
+    }
+    // Garante que a raiz seja sempre PRETA (Propriedade 2)
+    tree->root->color = BLACK;
+}
+
 bool TBinaryTree_add(TBinaryTree *tree,char *data){
     TNode *node;
     if(data != NULL){
@@ -255,11 +312,24 @@ bool TBinaryTree_add(TBinaryTree *tree,char *data){
         bool result = TBinaryTree_addNode(tree,tree->root, node,0);
         if(result == false){
             TNode_destroy(node);
+            return result;
         }
-        return result;
+
+        if(node->parent == NULL) { // O nó inserido é a raiz
+            node->color = BLACK;
+            return true;
+        }
+        if (node->parent->parent == NULL) { // O pai do nó é a raiz
+            return true; // Nenhuma violação possível ainda
+        }
+
+        RB_insert_fixup(tree, node); // Nova função de correção
+        return true;
+    
     }
     return false;
 }
+
 
 TNode *avo(TNode *arvore) {
     if((arvore != NULL) && (arvore->parent != NULL)){
@@ -371,7 +441,8 @@ bool TBinaryTree_addNode(TBinaryTree *tree,TNode *node1, TNode *node2,int level)
                 return true;
             } else {
                 bool result = TBinaryTree_addNode(tree,node1->right,node2,level+1);
-                consertaRB(&tree->root, &node2);
+                // consertaRB(&tree->root, &node2);
+                RB_insert_fixup(tree, node2);
                 return result;
             }
             case -1:
@@ -386,7 +457,8 @@ bool TBinaryTree_addNode(TBinaryTree *tree,TNode *node1, TNode *node2,int level)
                 return true;
             } else {
                 bool result = TBinaryTree_addNode(tree,node1->left,node2,level+1);
-                consertaRB(&tree->root, &node2);
+                // consertaRB(&tree->root, &node2);
+                RB_insert_fixup(tree, node2);
                 return result;
             }
     }
@@ -673,8 +745,8 @@ int main() {
         printf("Arvore criada com sucesso!\n");
         TBinaryTree_dump(&tree);
 
-        int valores[] = {12, 5, 5, 10};
-        for(int i = 0; i < 4; i++){
+        int valores[] = {12, 5, 5, 10, 1, 6, 72, 9, 50, 1};
+        for(int i = 0; i < 10; i++){
             data = valores[i];
             if(TBinaryTree_add(&tree,(char*)&data))
                 printf("Dado %d adicionado na arvore\n", data);
@@ -684,7 +756,7 @@ int main() {
             printf("\n");
         }
 
-        printf("\n\n\n");
+        printf("\n");
         TBinaryTree_show(&tree,printNode);
     }
 
