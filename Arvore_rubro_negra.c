@@ -7,8 +7,6 @@
 #define RED 1
 #include <assert.h> // Função para verificar se a arvore é verdadeira
 
-#define BLACK 0
-#define RED 1
 
 typedef struct tagNode {
     int size;
