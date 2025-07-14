@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -52,7 +53,17 @@ bool TBinaryTree_addNode(TBinaryTree *tree,TNode *node1, TNode *node2,int level)
 void TBinaryTree_dump(TBinaryTree *tree);
 void TBinaryTree_show(TBinaryTree *tree, void (*print)(char *data));
 bool TBinaryTree_search(TBinaryTree *tree, char *data);
-bool TBinaryTree_delete(TBinaryTree *tree, char *data,bool allNodes);
+bool TBinaryTree_delete(TBinaryTree *tree, char *data);
+void TNode_updateLevels(TNode* node, int level);
+
+void TNode_updateLevels(TNode* node, int level) {
+    if (node == NULL) {
+        return;
+    }
+    node->level = level;
+    TNode_updateLevels(node->left, level + 1);
+    TNode_updateLevels(node->right, level + 1);
+}
 
 bool TNode_create(TNode **node,char *data, int size,int level,TNode *parent, int cor){
     if(((*node) = malloc(sizeof(TNode))) != NULL) {
@@ -135,7 +146,7 @@ void TNode_printLevel(TNode *node, int level,void (*print)(char *data)){
     }
     if(node->level == level){ 
         print(node->data);
-        printf(" %d",node->color);
+        printf("(%d)", node->color);
     }
     else {
         TNode_printLevel(node->left,level,print);
@@ -186,11 +197,12 @@ void rotacaoDir(TNode **node){ //Faz a rotação a direita
     
     *node = filho_esq; // Atualiza o ponteiro original para o novo topo
     
+    TNode_updateLevels(*node, (*node)->level);    
 }
 
 void rotacaoEsq(TNode **node){
-if (node == NULL || *node == NULL || (*node)->left == NULL) {
-        return;
+    if (node == NULL || *node == NULL || (*node)->right == NULL) {
+            return;
     }
 
     TNode *node_aux = *node;
@@ -216,17 +228,8 @@ if (node == NULL || *node == NULL || (*node)->left == NULL) {
     node_aux->parent = filho_dir;
     
     *node = filho_dir; // Atualiza o ponteiro original para o novo topo
-    
-}
 
-void DuplaRotacaoEsquerda(TNode **no) {
-    rotacaoDir(&((*no)->right));
-    rotacaoEsq(no);
-}
-
-void DuplaRotacaoDireita(TNode **no) {
-    rotacaoEsq(&((*no)->left));
-    rotacaoDir(no);
+    TNode_updateLevels(*node, (*node)->level);
 }
 
 bool TBinaryTree_create(TBinaryTree *tree,char *data,int dataSize,int (*comparacao)(char *data1, char *data2)) {
@@ -351,79 +354,6 @@ TNode *tio(TNode *arvore) {
     }
 }
 
-void consertaRB(TNode **arvore, TNode **node) {
-    assert(arvore);
-
-    TNode *NAvo = NULL;
-    TNode *NTio = NULL;
-
-    if((*arvore)->parent != NULL) {
-        if((*arvore)->parent->color == BLACK) {
-            return;
-        }
-        if((*arvore)->color == RED) {
-            NTio = tio(*arvore);
-        }
-            if (NTio != NULL && NTio->color == RED) {
-                NAvo = avo(*arvore);
-                (*arvore)->parent->color = BLACK;
-                NTio->color = BLACK;
-                if (NAvo->parent != NULL) {
-                    NAvo->color = RED;
-                } 
-            } else {
-                NAvo = avo(*arvore);
-                if (NAvo != NULL) {
-                    if ((*arvore)->parent == NAvo->left) { // filho esquerdo
-                        if ((*arvore) == (NAvo->left)->left) {
-                            if (NAvo->parent != NULL) {
-                                if ((NAvo->parent)->left == NAvo)
-                                    rotacaoDir(&((NAvo->parent)->left));
-                                else
-                                    rotacaoDir(&((NAvo->parent)->right));
-                            } else {
-                                rotacaoDir(node);
-                            }
-
-
-                       } else {
-                           if (NAvo->parent != NULL) {
-                               if ((NAvo->parent)->left == NAvo) {
-                                    DuplaRotacaoDireita(&((NAvo->parent)->left));
-                               } else
-                                   DuplaRotacaoDireita(&((NAvo->parent)->right));
-                           } else { 
-                                DuplaRotacaoDireita(node);
-                           }
-                      }
-                   } else { 
-                       if ((*arvore) == ((NAvo->right)->right)) {
-                           if (NAvo->parent != NULL) {
-                               if (((NAvo->parent)->left) == NAvo) {
-                                    rotacaoEsq(&((NAvo->parent)->left));
-                               } else
-                                   rotacaoEsq(&((NAvo->parent)->right));
-                           } else {
-                                rotacaoEsq(node);
-                           }
-
-                       } else {
-                           if (NAvo->parent != NULL) {
-                               if((NAvo->parent)->left == NAvo) {
-                                    DuplaRotacaoEsquerda(&((NAvo->parent)->left));
-                               } else {
-                                    DuplaRotacaoEsquerda(&((NAvo->parent)->right));
-                               }
-                           } else {
-                                    DuplaRotacaoEsquerda(node);
-                           }
-                        }
-                }
-            }
-        }
-    }
-}
-
 bool TBinaryTree_addNode(TBinaryTree *tree,TNode *node1, TNode *node2,int level){
     int result = tree->comparacao(node1->data,node2->data);
     switch(result){
@@ -441,7 +371,6 @@ bool TBinaryTree_addNode(TBinaryTree *tree,TNode *node1, TNode *node2,int level)
                 return true;
             } else {
                 bool result = TBinaryTree_addNode(tree,node1->right,node2,level+1);
-                // consertaRB(&tree->root, &node2);
                 RB_insert_fixup(tree, node2);
                 return result;
             }
@@ -457,13 +386,13 @@ bool TBinaryTree_addNode(TBinaryTree *tree,TNode *node1, TNode *node2,int level)
                 return true;
             } else {
                 bool result = TBinaryTree_addNode(tree,node1->left,node2,level+1);
-                // consertaRB(&tree->root, &node2);
                 RB_insert_fixup(tree, node2);
                 return result;
             }
     }
     return false;
 }
+
 TNode *buscaNo(TNode *arvore, int k){
     if (arvore == NULL){ 
         return NULL;
@@ -484,222 +413,169 @@ TNode *buscaNo(TNode *arvore, int k){
     }
 }
 
-int filhoEsquerdo(TNode *arvore){
-    if(arvore->parent->left == arvore)
-        return 1;
-    else
-        return 0;
-}
 
-TNode *irmao(TNode *parent, TNode *noAtual){
-    if(parent == NULL){
-        return NULL;
-    }
-    
-    if(parent->right->data == noAtual->data){
-        return parent->left;
-    }else{
-        return parent->right;
-    }
-}
-
-void nBlackIBlackFRed(TNode *aRemover, TNode **arvore){
-    assert(arvore);
-
-    TNode *paiARemover = aRemover->parent;
-
-    if(filhoEsquerdo(aRemover) == 1){
-        free(aRemover);
-        aRemover->parent->left = NULL;
+// Função auxiliar para transplantar subárvores (substitui u por v)
+void RB_transplant(TBinaryTree *tree, TNode *u, TNode *v) {
+    if (u->parent == NULL) {
+        tree->root = v;
+    } else if (u == u->parent->left) {
+        u->parent->left = v;
     } else {
-        free(aRemover);
-        aRemover->parent->right = NULL;
+        u->parent->right = v;
     }
-
-    if(paiARemover->left == NULL){
-        if(paiARemover->parent == NULL){
-            if((paiARemover->right)->right == NULL){
-                rotacaoDir(&((*arvore)->right));
-            }
-            rotacaoEsq(arvore);
-        } 
-        else {
-            if((paiARemover->right)->right == NULL){
-                rotacaoDir(&(paiARemover->right));
-            }
-            rotacaoEsq(&paiARemover);
-        }
-    } 
-    else {
-        if(paiARemover->parent == NULL){
-            if((paiARemover->left)->left == NULL){
-                rotacaoEsq(&((*arvore)->left));
-            }
-            rotacaoDir(arvore);
-        } else {
-            if((paiARemover->right)->right == NULL){
-                rotacaoEsq(&(paiARemover->left));
-            }
-            rotacaoDir(&paiARemover);
-        }
-    }
-    return;
-}
-
-void nBlackIRed(TNode *aRemover, TNode **arvore){
-    assert(arvore);
-
-    TNode *paiARemover = aRemover->parent;
-    
-    nBlackIBlackFRed(aRemover,arvore);
-    
-    paiARemover->color = BLACK;
-    if(paiARemover->left != NULL)
-        (paiARemover->left)->color = RED;
-    if(paiARemover->right != NULL)
-        (paiARemover->right)->color = RED;
-}
-
-void nBlackIBlackFBlack(TNode *aRemover, TNode **arvore){
-    assert(arvore);
-
-    TNode *paiARemover = aRemover->parent;
-    TNode *nIrmao = irmao(paiARemover, aRemover);
-
-    nBlackIRed(aRemover, arvore);
-
-    paiARemover->color = BLACK;
-    nIrmao->color = RED;
-}
-
-
-
-TNode **maiorEsq(TNode **pMaiorEsq){
-    assert(pMaiorEsq);
-    
-    if (*pMaiorEsq == NULL){ 
-        return NULL;
-    }
-    if ((*pMaiorEsq)->right == NULL){
-        return pMaiorEsq;
-    }else{
-        return maiorEsq(&((*pMaiorEsq)->right));
+    if (v != NULL) {
+        v->parent = u->parent;
     }
 }
 
-void TBinaryTree_removeNODE(TNode **arvore, int k){
-    assert(arvore);
-
-    if((*arvore) == NULL){ 
-        return;
+// Função para encontrar o nó com o valor mínimo em uma subárvore
+TNode* tree_minimum(TNode *node) {
+    while (node->left != NULL) {
+        node = node->left;
     }
-    TNode *aRemover = *arvore;
+    return node;
+}
 
-    aRemover = buscaNo(aRemover, k);
+// Função de correção após a remoção de um nó PRETO
+void RB_delete_fixup(TBinaryTree *tree, TNode *x) {
+    TNode *w; // Irmão de x
 
-    if(aRemover == NULL){
-        return;
-    }
-
-    if(aRemover->right == NULL && aRemover->left == NULL){
-        if(aRemover->parent == NULL){
-            free(aRemover);
-            *arvore = NULL;
-            return;
-        } else {
-            if(aRemover->color == RED && aRemover->right == NULL && aRemover->left == NULL){
-                if(filhoEsquerdo(aRemover) == 1){
-                    free(aRemover);
-                    aRemover->parent->left = NULL;
-                } else {
-                    free(aRemover);
-                    aRemover->parent->right = NULL;
+    while (x != NULL && x != tree->root && x->color == BLACK) {
+        if (x == x->parent->left) {
+            w = x->parent->right;
+            // CASO 1: Irmão 'w' é VERMELHO
+            if (w != NULL && w->color == RED) {
+                w->color = BLACK;
+                x->parent->color = RED;
+                rotacaoEsq(&(x->parent));
+                w = x->parent->right; // Novo irmão
+            }
+            // CASO 2: Irmão 'w' é PRETO e seus dois filhos são PRETOS
+            if (w != NULL && (w->left == NULL || w->left->color == BLACK) && (w->right == NULL || w->right->color == BLACK)) {
+                w->color = RED;
+                x = x->parent;
+            } else if (w != NULL) {
+                // CASO 3: Irmão 'w' é PRETO, seu filho esquerdo é VERMELHO e o direito é PRETO
+                if (w->right == NULL || w->right->color == BLACK) {
+                    if (w->left != NULL) w->left->color = BLACK;
+                    w->color = RED;
+                    rotacaoDir(&(w));
+                    w = x->parent->right;
                 }
-                return;
+                // CASO 4: Irmão 'w' é PRETO e seu filho direito é VERMELHO
+                w->color = x->parent->color;
+                x->parent->color = BLACK;
+                if (w->right != NULL) w->right->color = BLACK;
+                rotacaoEsq(&(x->parent));
+                x = tree->root; // Fim do loop
             } else {
-                TNode *nIrmao = irmao(aRemover->parent,aRemover);
-                    if(nIrmao == NULL){
-                        return;
-                    }
-                if(aRemover->color == BLACK && nIrmao->color == BLACK){
-                    if(nIrmao->right == NULL && nIrmao->left == NULL){
-                        nBlackIBlackFBlack(aRemover, arvore);
-                        return;
-                    } else if(nIrmao->left->color == BLACK && nIrmao->right->color == BLACK){
-                        nBlackIBlackFBlack(aRemover, arvore);
-                        return;
-                    }
-                    else if(nIrmao->right->color == BLACK && nIrmao->left == NULL){
-                        nBlackIBlackFBlack(aRemover, arvore);
-                        return;
-                    }
-                    else if(nIrmao->left->color == BLACK && nIrmao->right == NULL){
-                        nBlackIBlackFBlack(aRemover, arvore);
-                        return;
-                    }
-                } else if(aRemover->color == BLACK && nIrmao->color == BLACK && (nIrmao->left->color == RED || nIrmao->right->color == RED)){
-                    if(nIrmao->left != NULL){
-                        nBlackIBlackFRed(aRemover, arvore);
-                        return;
-                    } else if (nIrmao->right != NULL){
-                        nBlackIBlackFRed(aRemover, arvore);
-                        return;
-                    }
-                } else if(aRemover->color == BLACK && nIrmao->color == RED){
-                    nBlackIRed(aRemover, arvore);
-                }
+                 x = tree->root; // Irmão é NULL, termina
             }
-
-            return;
-        }
-    } else if (aRemover->right == NULL || aRemover->left == NULL){
-        if(aRemover->right != NULL){
-            aRemover->data = aRemover->right->data;
-            free(aRemover->right);
-            aRemover->right = NULL;
-        } else {
-            aRemover->data = aRemover->left->data;
-            free(aRemover->left);
-            aRemover->left = NULL;
-        }
-    } else {
-        TNode **nSubstituto = maiorEsq(&(aRemover->left));
-        TNode *auxSubstituto = *nSubstituto;
-
-        aRemover->data = (*nSubstituto)->data;
-        (*nSubstituto)->parent->left = (*nSubstituto)->left;
-
-
-        if(aRemover->color == RED){
-            if(aRemover->left == NULL && aRemover == aRemover->parent->left && (aRemover->right->right != NULL || aRemover->right->left != NULL)){
-                if(aRemover->right->right != NULL){
-                    rotacaoDir(&(aRemover->left));
-                    rotacaoEsq(&aRemover);
-                }
-                if(aRemover->right->left != NULL){
-                    rotacaoDir(&(aRemover->right));
-                    rotacaoEsq(&aRemover);
-                    
-                }
-            } else if(aRemover->left == NULL && aRemover == aRemover->parent->right && (aRemover->left->right != NULL || aRemover->left->left != NULL)){
-                if(aRemover->left->right != NULL){
-                    rotacaoEsq(&(aRemover->left));
-                    rotacaoDir(&aRemover);
-                }
-                if(aRemover->left->left != NULL){
-                    rotacaoEsq(&(aRemover->left));
-                    rotacaoDir(&aRemover);
-                }
+        } else { // Lógica espelhada para o caso de 'x' ser filho direito
+            w = x->parent->left;
+            // CASO 1
+            if (w != NULL && w->color == RED) {
+                w->color = BLACK;
+                x->parent->color = RED;
+                rotacaoDir(&(x->parent));
+                w = x->parent->left;
             }
-
-            aRemover->color = BLACK;
-            if(aRemover->left != NULL)
-                aRemover->left->color = RED;
-            if(aRemover->right != NULL)
-                aRemover->right->color = RED;
+            // CASO 2
+            if (w != NULL && (w->right == NULL || w->right->color == BLACK) && (w->left == NULL || w->left->color == BLACK)) {
+                w->color = RED;
+                x = x->parent;
+            } else if (w != NULL) {
+                // CASO 3
+                if (w->left == NULL || w->left->color == BLACK) {
+                    if (w->right != NULL) w->right->color = BLACK;
+                    w->color = RED;
+                    rotacaoEsq(&(w));
+                    w = x->parent->left;
+                }
+                // CASO 4
+                w->color = x->parent->color;
+                x->parent->color = BLACK;
+                if (w->left != NULL) w->left->color = BLACK;
+                rotacaoDir(&(x->parent));
+                x = tree->root;
+            } else {
+                 x = tree->root;
+            }
         }
-        free(auxSubstituto);
     }
+    if (x != NULL) {
+        x->color = BLACK;
+    }
+}
+
+// A função principal de remoção
+bool TBinaryTree_delete(TBinaryTree *tree, char *data) {
+    TNode *z = tree->root;
+    // 1. Encontrar o nó a ser removido (z)
+    while(z != NULL) {
+        int cmp = tree->comparacao(data, z->data);
+        if (cmp == 0){
+            break;
+        }
+        z = (cmp > 0) ? z->left : z->right;
+    }
+
+    if (z == NULL) {
+        return false; // Nó não encontrado
+    }
+
+    TNode *y = z;     // y é o nó que será fisicamente removido ou movido
+    TNode *x;         // x é o filho que se move para a posição de y
+    int y_original_color = y->color;
+
+    // 2. Lógica de remoção da BST
+    if (z->left == NULL) {
+        x = z->right;
+        RB_transplant(tree, z, z->right);
+    } else if (z->right == NULL) {
+        x = z->left;
+        RB_transplant(tree, z, z->left);
+    } else {
+        // Caso com 2 filhos: encontra o sucessor (mínimo na sub-árvore direita)
+        y = tree_minimum(z->right);
+        y_original_color = y->color;
+        x = y->right;
+
+        // AQUI ESTÁ A LÓGICA CORRIGIDA E MAIS ROBUSTA
+        if (y->parent == z) {
+            // Caso em que o sucessor (y) é filho direto de z
+            if (x != NULL) {
+                x->parent = y; // Necessário se x não for NULL
+            }
+        } else {
+            // Caso em que o sucessor (y) não é filho direto
+            RB_transplant(tree, y, y->right);
+            y->right = z->right;
+            y->right->parent = y;
+        }
+        
+        RB_transplant(tree, z, y);
+        y->left = z->left;
+        y->left->parent = y;
+        y->color = z->color; // y assume a cor e posição de z
+        
+        // CORREÇÃO DE NÍVEL: y assume o nível de z
+        y->level = z->level; 
+        TNode_updateLevels(y, y->level); // Garante que os filhos de y também se ajustem
+    }
+
+    tree->numberNodes--;
+
+    // 4. Se um nó PRETO foi removido, chama a função de correção
+    if (y_original_color == BLACK) {
+        RB_delete_fixup(tree, x);
+    }
+    
+    // 5. Libera a memória do nó original que foi substituído
+    free(z->data);
+    free(z);
+
+    return true;
 }
 
 void TBinaryTree_dump(TBinaryTree *tree){
@@ -740,6 +616,7 @@ int compara_int(char *data1,char *data2){
 int main() {
     TBinaryTree tree;
     int root = 8, data;
+    
 
     if(TBinaryTree_create(&tree,(char*)&root,sizeof(root),compara_int)){
         printf("Arvore criada com sucesso!\n");
@@ -759,6 +636,18 @@ int main() {
         printf("\n");
         TBinaryTree_show(&tree,printNode);
     }
+
+    printf("\n");
+    
+    int val_to_del = 12;
+    if(TBinaryTree_delete(&tree, (char*)&val_to_del)){
+        printf("No %d removido com sucesso.\n", val_to_del);
+    } else {
+        printf("No %d nao encontrado.\n", val_to_del);
+    }
+
+    TBinaryTree_show(&tree,printNode);
+
 
     return 0;
 }
