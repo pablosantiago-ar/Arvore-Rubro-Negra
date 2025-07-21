@@ -667,6 +667,28 @@ void printNode(char *data){
     printf(" %d", *((int*)data));
 }
 
+void TNode_export_json(TNode* node) {
+    if (node == NULL) {
+        printf("null");
+        return;
+    }
+
+    printf("{");
+    printf("\"value\": %d,", *((int*)node->data)); // O valor do nó
+    printf("\"color\": \"%s\",", (node->color == RED ? "red" : "black")); // A cor
+    
+    printf("\"left\": ");
+    TNode_export_json(node->left);
+    
+    printf(",");
+
+    printf("\"right\": ");
+    TNode_export_json(node->right);
+    
+    printf("}");
+}
+
+
 int compara_int(char *data1,char *data2){
     int a1, a2;
     memcpy(&a1,data1,sizeof(int));
@@ -697,7 +719,7 @@ int main() {
             TBinaryTree_dump(&tree);
             printf("\n");
         }
-
+        TNode_export_json(tree.root);
         printf("\n");
         TBinaryTree_show(&tree,printNode);
     }

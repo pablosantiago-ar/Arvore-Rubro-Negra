@@ -1,0 +1,56 @@
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #f0f0f0;
+    margin: 0;
+}
+
+h1 {
+    color: #333;
+}
+
+#tree-container {
+    position: relative; /* Essencial para posicionar os nós e linhas */
+    width: 95vw;
+    height: 80vh;
+    border: 2px solid #ccc;
+    background-color: #fff;
+    overflow: hidden; /* Esconde o que sair da área */
+}
+
+/* Contêiner para as linhas SVG */
+#lines-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* z-index removido daqui */
+}
+
+/* Estilo dos nós (círculos) */
+.node {
+    position: absolute; /* Permite o posicionamento exato com 'top' e 'left' */
+    width: 50px;
+    height: 50px;
+    border-radius: 50%; /* Faz o elemento virar um círculo */
+    color: white;
+    font-size: 1.2em;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid rgba(0, 0, 0, 0.3);
+    z-index: 10; /* <<< CORREÇÃO AQUI: Garante que os nós fiquem na frente das linhas */
+    transition: top 0.5s ease, left 0.5s ease; 
+}
+
+/* Cores específicas da Árvore Rubro-Negra */
+.red {
+    background-color: #e74c3c; /* Vermelho */
+}
+.black {
+    background-color: #34495e; /* Cinza escuro/preto */
+}
