@@ -1,25 +1,17 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // A função principal agora carrega os dados antes de desenhar.
     loadAndDrawTree();
 });
 
-/**
- * Carrega os dados do arquivo tree.json e inicia o desenho.
- */
 async function loadAndDrawTree() {
     try {
-        // Faz uma requisição para carregar o arquivo local tree.json
         const response = await fetch('tree.json?t=' + new Date().getTime()); // O parâmetro extra evita cache
         
-        // Verifica se a requisição foi bem-sucedida
         if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
         }
 
-        // Converte a resposta em um objeto JSON
         const treeData = await response.json();
 
-        // Pega os contêineres e inicia o desenho com os dados carregados
         const treeContainer = document.getElementById('tree-container');
         treeContainer.innerHTML = ''; // Limpa a área
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -32,7 +24,6 @@ async function loadAndDrawTree() {
         }
     } catch (error) {
         console.error("Erro ao carregar ou desenhar a árvore:", error);
-        // Exibe uma mensagem de erro na tela para o usuário
         const treeContainer = document.getElementById('tree-container');
         treeContainer.innerHTML = `<p class="error-msg">Falha ao carregar o arquivo <strong>tree.json</strong>. Verifique se o programa em C foi executado e se o servidor local está rodando.</p>`;
     }
@@ -73,7 +64,6 @@ function drawTree(node, x, y, hSpacing) {
 
 
 function drawLine(x1, y1, x2, y2) {
-    // Agora o 'svg' é pego de forma segura, pois já foi criado.
     const svg = document.getElementById('lines-container');
     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
     
