@@ -6,3 +6,15 @@ Este projeto implementa uma Árvore Rubro-Negra (Red-Black Tree) para servir com
 
 ## Principais funcionalidades
 
+Gerenciamento de Nós e Arquivos:
+
+- Inserção de arquivos: Adiciona novos registros ao índice, criando um arquivo .txt correspondente para cada nó inserido e garantindo o balanceamento da árvore.
+
+- Busca de arquivos: Permite encontrar registros no índice.
+
+- Remoção de arquivos: Remove registros do índice, excluindo o nó da árvore e o arquivo .txt correspondente do sistema.
+
+- Balanceamento Automático (Árvore Rubro-Negra):
+Implementação de rotações à direita e à esquerda (rotacaoDir, rotacaoEsq).
+
+- Funções de correção (RB_insert_fixup, RB_delete_fixup) que garantem as propriedades de auto-balanceamento da Árvore Rubro-Negra em todas as operações de inserção e remoção.
