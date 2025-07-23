@@ -667,25 +667,23 @@ void printNode(char *data){
     printf(" %d", *((int*)data));
 }
 
-void TNode_export_json(TNode* node) {
+void TNode_export_json(FILE *file, TNode* node) {
     if (node == NULL) {
-        printf("null");
+        fprintf(file, "null"); // Usa fprintf em vez de printf
         return;
     }
 
-    printf("{");
-    printf("\"value\": %d,", *((int*)node->data)); // O valor do nó
-    printf("\"color\": \"%s\",", (node->color == RED ? "red" : "black")); // A cor
+    fprintf(file, "{");
+    fprintf(file, "\"value\": %d,", *((int*)node->data));
+    fprintf(file, "\"color\": \"%s\",", (node->color == RED ? "red" : "black"));
     
-    printf("\"left\": ");
-    TNode_export_json(node->left);
+    fprintf(file, "\"left\": ");
+    TNode_export_json(file, node->left); // Passa o ponteiro adiante
     
-    printf(",");
-
-    printf("\"right\": ");
-    TNode_export_json(node->right);
+    fprintf(file, ",\"right\": ");
+    TNode_export_json(file, node->right); // Passa o ponteiro adiante
     
-    printf("}");
+    fprintf(file, "}");
 }
 
 
@@ -701,40 +699,61 @@ int compara_int(char *data1,char *data2){
 
 int main() {
     TBinaryTree tree;
-    int root = 8, data;
-    
+    int root = 8;
+    char filename_buffer[256]; // Buffer para guardar o nome do arquivo
 
-    if(TBinaryTree_create(&tree,(char*)&root,sizeof(root),compara_int, "root_node.txt")){
-        printf("Arvore criada com sucesso!\n");
-        TBinaryTree_dump(&tree);
+    // Cria o nome do arquivo para o nó raiz
+    snprintf(filename_buffer, sizeof(filename_buffer), "node_%d.txt", root);
 
-        int valores[] = {12, 5, 5, 10, 1, 6, 72, 9, 50, 1};
-        char *filenames[] = {"Arquivo associado ao 12.txt", "arquivo associado ao 5.txt", "file_5_dup.txt", "file_10.txt", "file_1.txt", "file_6.txt", "file_72.txt", "file_9.txt", "file_50.txt", "file_1_dup.txt"};
-        for(int i = 0; i < 10; i++){
-            data = valores[i];
-            if(TBinaryTree_add(&tree,(char*)&data, filenames[i]))
-                printf("Dado %d adicionado na arvore (arquivo: %s)\n", data, filenames[i]);
-            else
-                printf("Dado %d nao foi adicionado! (arquivo: %s)\n", data, filenames[i]);
-            TBinaryTree_dump(&tree);
-            printf("\n");
+    // Passa o nome do arquivo como o 5º argumento
+    if (TBinaryTree_create(&tree, (char*)&root, sizeof(root), compara_int, filename_buffer)) {
+        
+        printf("Arquivo tree.json e arquivos de nó serão gerados.\n");
+        
+        int valores[] = {12, 5, 10, 1, 6, 72, 9, 50};
+        for (int i = 0; i < 8; i++) {
+            // Cria o nome do arquivo para cada novo nó
+            snprintf(filename_buffer, sizeof(filename_buffer), "node_%d.txt", valores[i]);
+            
+            // Passa o nome do arquivo como o 3º argumento
+            if(!TBinaryTree_add(&tree, (char*)&valores[i], filename_buffer)){
+                 printf("Nó %d já existe. Não foi adicionado.\n", valores[i]);
+            }
         }
-        TNode_export_json(tree.root);
-        printf("\n");
-        TBinaryTree_show(&tree,printNode);
+
+        // 1. Abre o arquivo para escrita ("w" = write)
+        FILE *json_file = fopen("tree.json", "w");
+        if (json_file == NULL) {
+            printf("Erro ao abrir o arquivo tree.json!\n");
+            return 1; // Termina o programa se não conseguir abrir o arquivo
+        }
+
+        // 2. Chama a função de exportação, passando o arquivo
+        TNode_export_json(json_file, tree.root);
+
+        // 3. Fecha o arquivo
+        fclose(json_file);
+
+        printf("Arquivo tree.json gerado com sucesso!\n");
     }
 
-    printf("\n");
-    
+    // O código de deleção e show pode permanecer para teste, 
+    // mas a árvore será destruída antes da deleção se estiver dentro do if.
+    // Movendo a destruição para o final.
+
     int val_to_del = 55;
     if(TBinaryTree_delete(&tree, (char*)&val_to_del)){
         printf("No %d removido com sucesso.\n", val_to_del);
     } else {
-        printf("No %d nao encontrado.\n", val_to_del);
+        printf("No %d nao encontrado para deleção.\n", val_to_del);
     }
 
-    TBinaryTree_show(&tree,printNode);
+    printf("\nEstado final da árvore:\n");
+    TBinaryTree_show(&tree, printNode);
 
+    // Destruir a árvore no final de tudo
+    TBinaryTree_destroy(&tree);
+    printf("\nÁrvore destruída e arquivos de nó removidos.\n");
 
     return 0;
 }

@@ -1,24 +1,42 @@
 document.addEventListener('DOMContentLoaded', () => {
-    //
-    // PASSO 1: Cole aqui o JSON que você copiou da saída do seu programa C.
-    //
-    const treeData = {"value": 8,"color": "black","left": {"value": 5,"color": "black","left": {"value": 1,"color": "red","left": null,"right": null},"right": {"value": 6,"color": "red","left": null,"right": null}},"right": {"value": 12,"color": "red","left": {"value": 10,"color": "black","left": {"value": 9,"color": "red","left": null,"right": null},"right": null},"right": {"value": 72,"color": "black","left": {"value": 50,"color": "red","left": null,"right": null},"right": null}}};
-
-    const treeContainer = document.getElementById('tree-container');
-    
-    // Limpa a área e cria a base para o desenho.
-    treeContainer.innerHTML = ''; // Limpa tudo
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.id = 'lines-container';
-    treeContainer.appendChild(svg);
-    
-    const containerWidth = treeContainer.offsetWidth;
-
-    // Se houver dados na árvore, inicia o processo de desenho.
-    if (treeData) {
-        drawTree(treeData, containerWidth / 2, 50, containerWidth / 4);
-    }
+    // A função principal agora carrega os dados antes de desenhar.
+    loadAndDrawTree();
 });
+
+/**
+ * Carrega os dados do arquivo tree.json e inicia o desenho.
+ */
+async function loadAndDrawTree() {
+    try {
+        // Faz uma requisição para carregar o arquivo local tree.json
+        const response = await fetch('tree.json?t=' + new Date().getTime()); // O parâmetro extra evita cache
+        
+        // Verifica se a requisição foi bem-sucedida
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        // Converte a resposta em um objeto JSON
+        const treeData = await response.json();
+
+        // Pega os contêineres e inicia o desenho com os dados carregados
+        const treeContainer = document.getElementById('tree-container');
+        treeContainer.innerHTML = ''; // Limpa a área
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.id = 'lines-container';
+        treeContainer.appendChild(svg);
+        
+        const containerWidth = treeContainer.offsetWidth;
+        if (treeData) {
+            drawTree(treeData, containerWidth / 2, 50, containerWidth / 4);
+        }
+    } catch (error) {
+        console.error("Erro ao carregar ou desenhar a árvore:", error);
+        // Exibe uma mensagem de erro na tela para o usuário
+        const treeContainer = document.getElementById('tree-container');
+        treeContainer.innerHTML = `<p class="error-msg">Falha ao carregar o arquivo <strong>tree.json</strong>. Verifique se o programa em C foi executado e se o servidor local está rodando.</p>`;
+    }
+}
 
 
 function drawTree(node, x, y, hSpacing) {
