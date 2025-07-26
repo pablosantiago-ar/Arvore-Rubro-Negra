@@ -9,8 +9,6 @@
 
 Este projeto implementa uma Árvore Rubro-Negra (Red-Black Tree) para servir como um índice eficiente para arquivos. O principal objetivo é demonstrar como essa estrutura de dados auto-balanceável pode ser utilizada para otimizar operações de busca, inserção e remoção em grandes volumes de dados, simulando um sistema de indexação de arquivos. A Árvore Rubro-Negra garante um tempo logarítmico para essas operações, fundamental para manter a performance mesmo com muitos registros.
 
-## Instrução de instalação
-
 ## pré requisitos
 Certifique-se de ter os seguintes softwares instalados em sua máquina:
 
@@ -33,17 +31,19 @@ Certifique-se de ter os seguintes softwares instalados em sua máquina:
         ```bash
         npm install -g http-server
         ```
-    * **Com Python (já vem instalado na maioria dos sistemas):**
-        ```bash
-        python -m http.server 8000
-        ```
 
 ### 1. Clonando o Repositório
 
 ```bash
 git clone https://github.com/pablosantiago-ar/Arvore-Rubro-Negra
 ```
-
+## Instrução de instalação
+* rode no terminal
+ ```
+   node server.js (Não feche o terminal)
+ ```
+* No navegador de sua preferência, cole o endereço que for fornecido no terminal
+  
 ## Principais funcionalidades
 
 Gerenciamento de Nós e Arquivos:
@@ -58,7 +58,5 @@ Gerenciamento de Nós e Arquivos:
 Implementação de rotações à direita e à esquerda (rotacaoDir, rotacaoEsq).
 
 * Funções de correção (RB_insert_fixup, RB_delete_fixup) que garantem as propriedades de auto-balanceamento da Árvore Rubro-Negra em todas as operações de inserção e remoção.
-
-## Tecnologias utilizadas
 
 
