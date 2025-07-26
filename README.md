@@ -12,22 +12,52 @@ Este projeto implementa uma Árvore Rubro-Negra (Red-Black Tree) para servir com
 ## Instrução de instalação
 
 ## pré requisitos
+Certifique-se de ter os seguintes softwares instalados em sua máquina:
 
+* **Compilador C (GCC/Clang)**: Essencial para compilar o código C.
+    * No Linux/macOS, você geralmente já tem o GCC/Clang ou pode instalá-los via gerenciador de pacotes.
+    * Para usuários de Windows, é recomendado instalar o **[MinGW](https://osdn.net/projects/mingw/releases/)** (Minimalist GNU for Windows), que inclui o GCC.
+    * Você pode verificar a instalação abrindo o terminal/prompt de comando e digitando:
+        ```bash
+        gcc --version
+        ```
+* **Git**: Para clonar o repositório do GitHub.
+    * Verifique a instalação com:
+        ```bash
+        git --version
+        ```
+    * Baixe em [git-scm.com](https://git-scm.com/).
+* **Navegador Web**: Qualquer navegador moderno (Chrome, Firefox, Edge) para abrir a interface HTML.
+* **Servidor Web Local (Opcional, mas Recomendado)**: Para servir os arquivos HTML, CSS e JavaScript.
+    * **Com Node.js (se tiver npm):**
+        ```bash
+        npm install -g http-server
+        ```
+    * **Com Python (já vem instalado na maioria dos sistemas):**
+        ```bash
+        python -m http.server 8000
+        ```
+
+### 1. Clonando o Repositório
+
+```bash
+git clone https://github.com/pablosantiago-ar/Arvore-Rubro-Negra
+```
 
 ## Principais funcionalidades
 
 Gerenciamento de Nós e Arquivos:
 
-- Inserção de arquivos: Adiciona novos registros ao índice, criando um arquivo .txt correspondente para cada nó inserido e garantindo o balanceamento da árvore.
+* Inserção de arquivos: Adiciona novos registros ao índice, criando um arquivo .txt correspondente para cada nó inserido e garantindo o balanceamento da árvore.
 
-- Busca de arquivos: Permite encontrar registros no índice.
+* Busca de arquivos: Permite encontrar registros no índice.
 
-- Remoção de arquivos: Remove registros do índice, excluindo o nó da árvore e o arquivo .txt correspondente do sistema.
+* Remoção de arquivos: Remove registros do índice, excluindo o nó da árvore e o arquivo .txt correspondente do sistema.
 
-- Balanceamento Automático (Árvore Rubro-Negra):
+* Balanceamento Automático (Árvore Rubro-Negra):
 Implementação de rotações à direita e à esquerda (rotacaoDir, rotacaoEsq).
 
-- Funções de correção (RB_insert_fixup, RB_delete_fixup) que garantem as propriedades de auto-balanceamento da Árvore Rubro-Negra em todas as operações de inserção e remoção.
+* Funções de correção (RB_insert_fixup, RB_delete_fixup) que garantem as propriedades de auto-balanceamento da Árvore Rubro-Negra em todas as operações de inserção e remoção.
 
 ## Tecnologias utilizadas
 
