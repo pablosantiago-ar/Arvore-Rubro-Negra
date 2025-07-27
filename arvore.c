@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h> // Função para verificar se a arvore é verdadeira
+#include <assert.h>
 
 #define BLACK 0
 #define RED 1
@@ -12,7 +12,7 @@
 
 typedef struct tagNode {
     int size;
-    int color; //Adicionei para que haja a mudança de cores, quando houver o balanceamento conseguir fazer a mudança
+    int color;
     int level;
     char *data;
     char *filename;
@@ -30,7 +30,7 @@ typedef struct tagBinaryTree {
 } TBinaryTree;
 
 
-bool TNode_create(TNode **node,char *data, int size,int level, TNode *parent, int cor, const char *filename); //preciso adicionar o parametro de cor nessa função
+bool TNode_create(TNode **node,char *data, int size,int level, TNode *parent, int cor, const char *filename);
 void TNode_destroy(TNode *node);
 void TNode_setParent(TNode *node,TNode *parent);
 TNode *TNode_getParent(TNode *node);
@@ -79,14 +79,11 @@ bool TNode_create(TNode **node,char *data, int size,int level,TNode *parent, int
             (*node)->right = NULL;
             (*node)->color = cor;
 
-            //Usar o nome de arquivo fornecido
-            (*node)->filename = strdup(filename); //Alocar e copiar o nome do arquivo
-            // Criar o arquivo vazio
+            (*node)->filename = strdup(filename);
             FILE *fp = fopen((*node)->filename, "w");
             if (fp != NULL) {
                 fclose(fp);
             } else {
-                // Lidar com erro na criação do arquivo
                 fprintf(stderr, "Erro ao criar arquivo para o nó: %s\n", (*node)->filename);
                 free((*node)->filename);
                 free((*node)->data);
@@ -105,7 +102,7 @@ bool TNode_create(TNode **node,char *data, int size,int level,TNode *parent, int
 }
 
 void TNode_destroy(TNode *node){
-    if(node == NULL){ 
+    if(node == NULL){
         return;
     }
     if(node->left != NULL){
@@ -115,7 +112,6 @@ void TNode_destroy(TNode *node){
         TNode_destroy(node->right);
     }
 
-    //Excluir o arquivo associado ao nó
     if (node->filename != NULL){
         if(remove(node->filename) != 0){
             fprintf(stderr, "Erro ao excluir arquivo %s\n", node->filename);
@@ -155,7 +151,7 @@ void TNode_show(TNode *node){
 }
 
 void TNode_goLevel(TNode *node, int level){
-    if(node == NULL){ 
+    if(node == NULL){
         return;
     }
     if(node->level == level){
@@ -168,10 +164,10 @@ void TNode_goLevel(TNode *node, int level){
 }
 
 void TNode_printLevel(TNode *node, int level,void (*print)(char *data)){
-    if(node == NULL){ 
+    if(node == NULL){
         return;
     }
-    if(node->level == level){ 
+    if(node->level == level){
         print(node->data);
         printf("(%d)", node->color);
     }
@@ -209,10 +205,8 @@ void rotacaoDir(TNode **node){ //Faz a rotação a direita
     }
 
     filho_esq->parent = node_aux->parent;
-    
-    // Atualiza o ponteiro do pai para apontar para o novo topo da sub-árvore
+
     if (node_aux->parent == NULL) {
-        // Se node_aux era a raiz, não há o que fazer aqui. O chamador cuidará da raiz da árvore.
     } else if (node_aux == node_aux->parent->right) {
         node_aux->parent->right = filho_esq;
     } else {
@@ -221,10 +215,10 @@ void rotacaoDir(TNode **node){ //Faz a rotação a direita
 
     filho_esq->right = node_aux;
     node_aux->parent = filho_esq;
-    
-    *node = filho_esq; // Atualiza o ponteiro original para o novo topo
-    
-    TNode_updateLevels(*node, (*node)->level);    
+
+    *node = filho_esq;
+
+    TNode_updateLevels(*node, (*node)->level);
 }
 
 void rotacaoEsq(TNode **node){
@@ -241,10 +235,8 @@ void rotacaoEsq(TNode **node){
     }
 
     filho_dir->parent = node_aux->parent;
-    
-    // Atualiza o ponteiro do pai para apontar para o novo topo da sub-árvore
+
     if (node_aux->parent == NULL) {
-        // Se node_aux era a raiz, não há o que fazer aqui. O chamador cuidará da raiz da árvore.
     } else if (node_aux == node_aux->parent->left) {
         node_aux->parent->left = filho_dir;
     } else {
@@ -253,8 +245,8 @@ void rotacaoEsq(TNode **node){
 
     filho_dir->left = node_aux;
     node_aux->parent = filho_dir;
-    
-    *node = filho_dir; // Atualiza o ponteiro original para o novo topo
+
+    *node = filho_dir;
 
     TNode_updateLevels(*node, (*node)->level);
 }
@@ -280,80 +272,64 @@ void TBinaryTree_destroy(TBinaryTree *tree){
     tree->deepth = 0;
 }
 
-// Nova função para corrigir a árvore após inserção
 void RB_insert_fixup(TBinaryTree *tree, TNode *z) {
     TNode *tio;
 
-    // O loop continua enquanto o pai de 'z' for VERMELHO
     while (z->parent != NULL && z->parent->color == RED) {
-        // Pai é filho à esquerda do avô
         if (z->parent == z->parent->parent->left) {
             tio = z->parent->parent->right;
-            // CASO 1: Tio é VERMELHO
-            if (tio != NULL && tio->color == RED) {
-                z->parent->color = BLACK;
-                tio->color = BLACK;
-                z->parent->parent->color = RED;
-                z = z->parent->parent; // Move para o avô e continua a verificação
-            } else {
-                // CASO 2: Tio é PRETO e 'z' é filho à direita (triângulo)
-                if (z == z->parent->right) {
-                    z = z->parent;
-                    rotacaoEsq(&z); // Rotaciona no pai para transformar em CASO 3
-                }
-                // CASO 3: Tio é PRETO e 'z' é filho à esquerda (linha)
-                z->parent->color = BLACK;
-                z->parent->parent->color = RED;
-                rotacaoDir(&(z->parent->parent));
-            }
-        } else { // Pai é filho à direita do avô (lógica espelhada)
-            tio = z->parent->parent->left;
-            // CASO 1: Tio é VERMELHO
             if (tio != NULL && tio->color == RED) {
                 z->parent->color = BLACK;
                 tio->color = BLACK;
                 z->parent->parent->color = RED;
                 z = z->parent->parent;
             } else {
-                // CASO 2: Tio é PRETO e 'z' é filho à esquerda (triângulo)
+                if (z == z->parent->right) {
+                    z = z->parent;
+                    rotacaoEsq(&z);
+                }
+                z->parent->color = BLACK;
+                z->parent->parent->color = RED;
+                rotacaoDir(&(z->parent->parent));
+            }
+        } else {
+            tio = z->parent->parent->left;
+            if (tio != NULL && tio->color == RED) {
+                z->parent->color = BLACK;
+                tio->color = BLACK;
+                z->parent->parent->color = RED;
+                z = z->parent->parent;
+            } else {
                 if (z == z->parent->left) {
                     z = z->parent;
                     rotacaoDir(&z);
                 }
-                // CASO 3: Tio é PRETO e 'z' é filho à direita (linha)
                 z->parent->color = BLACK;
                 z->parent->parent->color = RED;
                 rotacaoEsq(&(z->parent->parent));
             }
         }
-        // Se z chegou na raiz, sai do loop
         if (z == tree->root) {
             break;
         }
     }
-    // Garante que a raiz seja sempre PRETA (Propriedade 2)
     tree->root->color = BLACK;
 }
 
-//adição para que a implementação do arquivo seja correta
 bool TBinaryTree_add(TBinaryTree *tree,char *data, const char *filename){
     TNode *node;
     if(data != NULL && filename != NULL){
-        // Cria o nó e o arquivo associado
         if(!TNode_create(&node,data,tree->dataSize,0,NULL, 1, filename)) {
-            return false; // Falha na criação do nó ou do arquivo
-        }
+            return false;
 
-        // Se a árvore está vazia, o novo nó se torna a raiz
         if (tree->root == NULL) {
             tree->root = node;
-            node->color = BLACK; // Raiz é sempre preta
+            node->color = BLACK;
             tree->numberNodes = 1;
             tree->deepth = 0;
             return true;
         }
 
-        // Adiciona o nó na estrutura da BST
         TNode *current = tree->root;
         TNode *parent = NULL;
         int cmp_result;
@@ -384,7 +360,6 @@ bool TBinaryTree_add(TBinaryTree *tree,char *data, const char *filename){
             tree->deepth = node->level;
         }
 
-        // Aplica a correção da árvore Vermelho-Preta
         RB_insert_fixup(tree, node);
         return true;
     }
@@ -402,7 +377,7 @@ TNode *avo(TNode *arvore) {
 
 TNode *tio(TNode *arvore) {
     TNode *NAvo = avo(arvore);
-    if (NAvo == NULL){ 
+    if (NAvo == NULL){
         return NULL;
     }
     if (arvore->parent == NAvo->left){
@@ -415,7 +390,7 @@ TNode *tio(TNode *arvore) {
 bool TBinaryTree_addNode(TBinaryTree *tree,TNode *node1, TNode *node2,int level){
     int result = tree->comparacao(node1->data,node2->data);
     switch(result){
-        case 0: 
+        case 0:
             return false;
         case 1:
             if(node1->right == NULL){
@@ -452,7 +427,7 @@ bool TBinaryTree_addNode(TBinaryTree *tree,TNode *node1, TNode *node2,int level)
 }
 
 TNode *buscaNo(TNode *arvore, int k){
-    if (arvore == NULL){ 
+    if (arvore == NULL){
         return NULL;
     }
 
@@ -472,7 +447,6 @@ TNode *buscaNo(TNode *arvore, int k){
 }
 
 
-// Função auxiliar para transplantar subárvores (substitui u por v)
 void RB_transplant(TBinaryTree *tree, TNode *u, TNode *v) {
     if (u->parent == NULL) {
         tree->root = v;
@@ -486,7 +460,6 @@ void RB_transplant(TBinaryTree *tree, TNode *u, TNode *v) {
     }
 }
 
-// Função para encontrar o nó com o valor mínimo em uma subárvore
 TNode* tree_minimum(TNode *node) {
     while (node->left != NULL) {
         node = node->left;
@@ -494,63 +467,54 @@ TNode* tree_minimum(TNode *node) {
     return node;
 }
 
-// Função de correção após a remoção de um nó PRETO
 void RB_delete_fixup(TBinaryTree *tree, TNode *x) {
-    TNode *w; // Irmão de x
+    TNode *w;
 
     while (x != NULL && x != tree->root && x->color == BLACK) {
         if (x == x->parent->left) {
             w = x->parent->right;
-            // CASO 1: Irmão 'w' é VERMELHO
             if (w != NULL && w->color == RED) {
                 w->color = BLACK;
                 x->parent->color = RED;
                 rotacaoEsq(&(x->parent));
-                w = x->parent->right; // Novo irmão
+                w = x->parent->right;
             }
-            // CASO 2: Irmão 'w' é PRETO e seus dois filhos são PRETOS
             if (w != NULL && (w->left == NULL || w->left->color == BLACK) && (w->right == NULL || w->right->color == BLACK)) {
                 w->color = RED;
                 x = x->parent;
             } else if (w != NULL) {
-                // CASO 3: Irmão 'w' é PRETO, seu filho esquerdo é VERMELHO e o direito é PRETO
                 if (w->right == NULL || w->right->color == BLACK) {
                     if (w->left != NULL) w->left->color = BLACK;
                     w->color = RED;
                     rotacaoDir(&(w));
                     w = x->parent->right;
                 }
-                // CASO 4: Irmão 'w' é PRETO e seu filho direito é VERMELHO
                 w->color = x->parent->color;
                 x->parent->color = BLACK;
                 if (w->right != NULL) w->right->color = BLACK;
                 rotacaoEsq(&(x->parent));
-                x = tree->root; // Fim do loop
+                x = tree->root;
             } else {
-                 x = tree->root; // Irmão é NULL, termina
+                 x = tree->root;
             }
-        } else { // Lógica espelhada para o caso de 'x' ser filho direito
+        } else {
             w = x->parent->left;
-            // CASO 1
             if (w != NULL && w->color == RED) {
                 w->color = BLACK;
                 x->parent->color = RED;
                 rotacaoDir(&(x->parent));
                 w = x->parent->left;
             }
-            // CASO 2
             if (w != NULL && (w->right == NULL || w->right->color == BLACK) && (w->left == NULL || w->left->color == BLACK)) {
                 w->color = RED;
                 x = x->parent;
             } else if (w != NULL) {
-                // CASO 3
                 if (w->left == NULL || w->left->color == BLACK) {
                     if (w->right != NULL) w->right->color = BLACK;
                     w->color = RED;
                     rotacaoEsq(&(w));
                     w = x->parent->left;
                 }
-                // CASO 4
                 w->color = x->parent->color;
                 x->parent->color = BLACK;
                 if (w->left != NULL) w->left->color = BLACK;
@@ -566,10 +530,8 @@ void RB_delete_fixup(TBinaryTree *tree, TNode *x) {
     }
 }
 
-// A função principal de remoção, além de mudança na propria função
 bool TBinaryTree_delete(TBinaryTree *tree, char *data) {
     TNode *z = tree->root;
-    // 1. Encontrar o nó a ser removido (z)
     while(z != NULL) {
         int cmp = tree->comparacao(data, z->data);
         if (cmp == 0){
@@ -579,14 +541,13 @@ bool TBinaryTree_delete(TBinaryTree *tree, char *data) {
     }
 
     if (z == NULL) {
-        return false; // Nó não encontrado
+        return false;
     }
 
-    TNode *y = z;     // y é o nó que será fisicamente removido ou movido
-    TNode *x;         // x é o filho que se move para a posição de y
+    TNode *y = z;
+    TNode *x;
     int y_original_color = y->color;
 
-    // 2. Lógica de remoção da BST
     if (z->left == NULL) {
         x = z->right;
         RB_transplant(tree, z, z->right);
@@ -594,42 +555,35 @@ bool TBinaryTree_delete(TBinaryTree *tree, char *data) {
         x = z->left;
         RB_transplant(tree, z, z->left);
     } else {
-        // Caso com 2 filhos: encontra o sucessor (mínimo na sub-árvore direita)
         y = tree_minimum(z->right);
         y_original_color = y->color;
         x = y->right;
 
-        // AQUI ESTÁ A LÓGICA CORRIGIDA E MAIS ROBUSTA
         if (y->parent == z) {
-            // Caso em que o sucessor (y) é filho direto de z
             if (x != NULL) {
-                x->parent = y; // Necessário se x não for NULL
+                x->parent = y;
             }
         } else {
-            // Caso em que o sucessor (y) não é filho direto
             RB_transplant(tree, y, y->right);
             y->right = z->right;
             y->right->parent = y;
         }
-        
+
         RB_transplant(tree, z, y);
         y->left = z->left;
         y->left->parent = y;
-        y->color = z->color; // y assume a cor e posição de z
-        
-        // CORREÇÃO DE NÍVEL: y assume o nível de z
-        y->level = z->level; 
-        TNode_updateLevels(y, y->level); // Garante que os filhos de y também se ajustem
+        y->color = z->color;
+
+        y->level = z->level;
+        TNode_updateLevels(y, y->level);
     }
 
     tree->numberNodes--;
 
-    // 4. Se um nó PRETO foi removido, chama a função de correção
     if (y_original_color == BLACK) {
         RB_delete_fixup(tree, x);
     }
-    
-    // 5. Libera a memória do nó original que foi substituído
+
     if(z->filename != NULL){
         if(remove(z->filename) != 0){
             fprintf(stderr, "Erro ao excluir arquivo %s\n", z->filename);
@@ -669,20 +623,20 @@ void printNode(char *data){
 
 void TNode_export_json(FILE *file, TNode* node) {
     if (node == NULL) {
-        fprintf(file, "null"); // Usa fprintf em vez de printf
+        fprintf(file, "null");
         return;
     }
 
     fprintf(file, "{");
     fprintf(file, "\"value\": %d,", *((int*)node->data));
     fprintf(file, "\"color\": \"%s\",", (node->color == RED ? "red" : "black"));
-    
+
     fprintf(file, "\"left\": ");
-    TNode_export_json(file, node->left); // Passa o ponteiro adiante
-    
+    TNode_export_json(file, node->left);
+
     fprintf(file, ",\"right\": ");
-    TNode_export_json(file, node->right); // Passa o ponteiro adiante
-    
+    TNode_export_json(file, node->right);
+
     fprintf(file, "}");
 }
 
@@ -691,69 +645,55 @@ int compara_int(char *data1,char *data2){
     int a1, a2;
     memcpy(&a1,data1,sizeof(int));
     memcpy(&a2,data2,sizeof(int));
-    if(a1 == a2){ 
+    if(a1 == a2){
         return 0;
     }
     return (a1 > a2) ? 1 : -1;
 }
 
-int main() {
+int main(int argc, char *argv[]) {
     TBinaryTree tree;
-    int root = 8;
-    char filename_buffer[256]; // Buffer para guardar o nome do arquivo
+    bool tree_created = false;
+    char filename_buffer[256];
 
-    // Cria o nome do arquivo para o nó raiz
-    snprintf(filename_buffer, sizeof(filename_buffer), "node_%d.txt", root);
+    if (argc < 2) {
+        FILE *json_file = fopen("tree.json", "w");
+        if (json_file != NULL) {
+            fprintf(json_file, "null");
+            fclose(json_file);
+        }
+        return 0;
+    }
 
-    // Passa o nome do arquivo como o 5º argumento
-    if (TBinaryTree_create(&tree, (char*)&root, sizeof(root), compara_int, filename_buffer)) {
-        
-        printf("Arquivo tree.json e arquivos de nó serão gerados.\n");
-        
-        int valores[] = {12, 5, 10, 1, 6, 72, 9, 50};
-        for (int i = 0; i < 8; i++) {
-            // Cria o nome do arquivo para cada novo nó
-            snprintf(filename_buffer, sizeof(filename_buffer), "node_%d.txt", valores[i]);
-            
-            // Passa o nome do arquivo como o 3º argumento
-            if(!TBinaryTree_add(&tree, (char*)&valores[i], filename_buffer)){
-                 printf("Nó %d já existe. Não foi adicionado.\n", valores[i]);
+    for (int i = 1; i < argc; i++) {
+        int value = atoi(argv[i]);
+        snprintf(filename_buffer, sizeof(filename_buffer), "node_%d.txt", value);
+
+        if (!tree_created) {
+            if (TBinaryTree_create(&tree, (char*)&value, sizeof(value), compara_int, filename_buffer)) {
+                tree_created = true;
+            } else {
+                fprintf(stderr, "Erro ao criar a árvore com a raiz %d.\n", value);
+                return 1;
+            }
+        } else {
+            if(!TBinaryTree_add(&tree, (char*)&value, filename_buffer)){
             }
         }
+    }
 
-        // 1. Abre o arquivo para escrita ("w" = write)
+    if (tree_created) {
         FILE *json_file = fopen("tree.json", "w");
         if (json_file == NULL) {
-            printf("Erro ao abrir o arquivo tree.json!\n");
-            return 1; // Termina o programa se não conseguir abrir o arquivo
+            perror("Erro ao abrir o arquivo tree.json para escrita");
+            TBinaryTree_destroy(&tree);
+            return 1;
         }
-
-        // 2. Chama a função de exportação, passando o arquivo
         TNode_export_json(json_file, tree.root);
-
-        // 3. Fecha o arquivo
         fclose(json_file);
-
-        printf("Arquivo tree.json gerado com sucesso!\n");
+        printf("tree.json gerado/atualizado com sucesso.\n");
+        TBinaryTree_destroy(&tree);
     }
-
-    // O código de deleção e show pode permanecer para teste, 
-    // mas a árvore será destruída antes da deleção se estiver dentro do if.
-    // Movendo a destruição para o final.
-
-    int val_to_del = 55;
-    if(TBinaryTree_delete(&tree, (char*)&val_to_del)){
-        printf("No %d removido com sucesso.\n", val_to_del);
-    } else {
-        printf("No %d nao encontrado para deleção.\n", val_to_del);
-    }
-
-    printf("\nEstado final da árvore:\n");
-    TBinaryTree_show(&tree, printNode);
-
-    // Destruir a árvore no final de tudo
-    TBinaryTree_destroy(&tree);
-    printf("\nÁrvore destruída e arquivos de nó removidos.\n");
 
     return 0;
 }
