@@ -30,7 +30,7 @@ typedef struct tagBinaryTree {
 } TBinaryTree;
 
 
-bool TNode_create(TNode **node,char *data, int size,int level, TNode *parent, int cor, const char *filename);
+bool TNode_create(TNode **node,char *data, int size,int level, TNode *parent, int cor, const char *filename, const char* content);
 void TNode_destroy(TNode *node);
 void TNode_setParent(TNode *node,TNode *parent);
 TNode *TNode_getParent(TNode *node);
@@ -49,9 +49,9 @@ void TNode_trocaCor(TNode *node);
 void rotacaoDir(TNode **node);
 void rotacaoEsq(TNode **node);
 
-bool TBinaryTree_create(TBinaryTree *tree,char *data,int dataSize,int (*comparacao)(char *data1, char *data2), const char *filename);
+bool TBinaryTree_create(TBinaryTree *tree,char *data,int dataSize,int (*comparacao)(char *data1, char *data2), const char *filename, const char* content);
 void TBinaryTree_destroy(TBinaryTree *tree);
-bool TBinaryTree_add(TBinaryTree *tree,char *data, const char *filename);
+bool TBinaryTree_add(TBinaryTree *tree,char *data, const char *filename, const char* content);
 bool TBinaryTree_addNode(TBinaryTree *tree,TNode *node1, TNode *node2,int level);
 void TBinaryTree_dump(TBinaryTree *tree);
 void TBinaryTree_show(TBinaryTree *tree, void (*print)(char *data));
@@ -68,7 +68,8 @@ void TNode_updateLevels(TNode* node, int level) {
     TNode_updateLevels(node->right, level + 1);
 }
 
-bool TNode_create(TNode **node,char *data, int size,int level,TNode *parent, int cor, const char *filename){
+// ATUALIZADO: Aceita o conteúdo para escrever no arquivo
+bool TNode_create(TNode **node,char *data, int size,int level,TNode *parent, int cor, const char *filename, const char* content){
     if(((*node) = malloc(sizeof(TNode))) != NULL) {
         if(((*node)->data = malloc(size)) != NULL) {
             memcpy((*node)->data,data,size);
@@ -82,6 +83,9 @@ bool TNode_create(TNode **node,char *data, int size,int level,TNode *parent, int
             (*node)->filename = strdup(filename);
             FILE *fp = fopen((*node)->filename, "w");
             if (fp != NULL) {
+                if (content != NULL) {
+                    fprintf(fp, "%s", content); // Escreve o conteúdo no arquivo
+                }
                 fclose(fp);
             } else {
                 fprintf(stderr, "Erro ao criar arquivo para o nó: %s\n", (*node)->filename);
@@ -101,6 +105,7 @@ bool TNode_create(TNode **node,char *data, int size,int level,TNode *parent, int
     return true;
 }
 
+
 void TNode_destroy(TNode *node){
     if(node == NULL){
         return;
@@ -112,12 +117,13 @@ void TNode_destroy(TNode *node){
         TNode_destroy(node->right);
     }
 
-    if (node->filename != NULL){
-        if(remove(node->filename) != 0){
-            fprintf(stderr, "Erro ao excluir arquivo %s\n", node->filename);
-        }
-        free(node->filename);
-    }
+    // A remoção do arquivo agora é gerenciada pelo server.js
+    // if (node->filename != NULL){
+    //     if(remove(node->filename) != 0){
+    //         fprintf(stderr, "Erro ao excluir arquivo %s\n", node->filename);
+    //     }
+    //     free(node->filename);
+    // }
     free(node->data);
     free(node);
 }
@@ -251,9 +257,10 @@ void rotacaoEsq(TNode **node){
     TNode_updateLevels(*node, (*node)->level);
 }
 
-bool TBinaryTree_create(TBinaryTree *tree,char *data,int dataSize,int (*comparacao)(char *data1, char *data2), const char *filename) {
+// ATUALIZADO
+bool TBinaryTree_create(TBinaryTree *tree,char *data,int dataSize,int (*comparacao)(char *data1, char *data2), const char *filename, const char* content) {
     if(data != NULL && dataSize > 0 && filename != NULL) {
-        if(TNode_create(&(tree->root),data,dataSize,0,NULL, 0, filename)) {
+        if(TNode_create(&(tree->root),data,dataSize,0,NULL, 0, filename, content)) {
             tree->comparacao = comparacao;
             tree->numberNodes = 1;
             tree->dataSize = dataSize;
@@ -316,11 +323,13 @@ void RB_insert_fixup(TBinaryTree *tree, TNode *z) {
     tree->root->color = BLACK;
 }
 
-bool TBinaryTree_add(TBinaryTree *tree,char *data, const char *filename){
+// ATUALIZADO
+bool TBinaryTree_add(TBinaryTree *tree, char *data, const char *filename, const char* content) {
     TNode *node;
-    if(data != NULL && filename != NULL){
-        if(!TNode_create(&node,data,tree->dataSize,0,NULL, 1, filename)) {
+    if (data != NULL && filename != NULL) {
+        if (!TNode_create(&node, data, tree->dataSize, 0, NULL, 1, filename, content)) {
             return false;
+        }
 
         if (tree->root == NULL) {
             tree->root = node;
@@ -337,8 +346,8 @@ bool TBinaryTree_add(TBinaryTree *tree,char *data, const char *filename){
         while (current != NULL) {
             parent = current;
             cmp_result = tree->comparacao(data, current->data);
-            if (cmp_result == 0) { // Dado já existe
-                TNode_destroy(node); // Destrói o nó e o arquivo recém-criados
+            if (cmp_result == 0) {
+                TNode_destroy(node);
                 return false;
             } else if (cmp_result > 0) {
                 current = current->right;
@@ -356,7 +365,7 @@ bool TBinaryTree_add(TBinaryTree *tree,char *data, const char *filename){
         }
 
         tree->numberNodes++;
-        if(node->level > tree->deepth){
+        if (node->level > tree->deepth) {
             tree->deepth = node->level;
         }
 
@@ -585,9 +594,7 @@ bool TBinaryTree_delete(TBinaryTree *tree, char *data) {
     }
 
     if(z->filename != NULL){
-        if(remove(z->filename) != 0){
-            fprintf(stderr, "Erro ao excluir arquivo %s\n", z->filename);
-        }
+        // A remoção física do arquivo é feita pelo server.js
         free(z->filename);
     }
     free(z->data);
@@ -651,12 +658,14 @@ int compara_int(char *data1,char *data2){
     return (a1 > a2) ? 1 : -1;
 }
 
+// ATUALIZADO: Processa pares de argumentos (valor e conteúdo)
 int main(int argc, char *argv[]) {
     TBinaryTree tree;
     bool tree_created = false;
     char filename_buffer[256];
 
-    if (argc < 2) {
+    // Precisa de pelo menos 1 valor e 1 conteúdo para começar (além do nome do programa)
+    if (argc < 3 || (argc - 1) % 2 != 0) {
         FILE *json_file = fopen("tree.json", "w");
         if (json_file != NULL) {
             fprintf(json_file, "null");
@@ -665,19 +674,21 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
-    for (int i = 1; i < argc; i++) {
+    for (int i = 1; i < argc; i += 2) {
         int value = atoi(argv[i]);
+        const char *content = argv[i + 1];
         snprintf(filename_buffer, sizeof(filename_buffer), "node_%d.txt", value);
 
         if (!tree_created) {
-            if (TBinaryTree_create(&tree, (char*)&value, sizeof(value), compara_int, filename_buffer)) {
+            if (TBinaryTree_create(&tree, (char*)&value, sizeof(value), compara_int, filename_buffer, content)) {
                 tree_created = true;
             } else {
                 fprintf(stderr, "Erro ao criar a árvore com a raiz %d.\n", value);
                 return 1;
             }
         } else {
-            if(!TBinaryTree_add(&tree, (char*)&value, filename_buffer)){
+            if(!TBinaryTree_add(&tree, (char*)&value, filename_buffer, content)){
+                // Opcional: lidar com falha na adição
             }
         }
     }
@@ -686,13 +697,12 @@ int main(int argc, char *argv[]) {
         FILE *json_file = fopen("tree.json", "w");
         if (json_file == NULL) {
             perror("Erro ao abrir o arquivo tree.json para escrita");
-            TBinaryTree_destroy(&tree);
             return 1;
         }
         TNode_export_json(json_file, tree.root);
         fclose(json_file);
         printf("tree.json gerado/atualizado com sucesso.\n");
-        TBinaryTree_destroy(&tree);
+        // Não destrói mais a árvore aqui para manter os arquivos
     }
 
     return 0;

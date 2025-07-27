@@ -9,8 +9,20 @@ const execPromise = promisify(exec);
 const app = express();
 const PORT = 3000;
 
-let treeValues = [8, 12, 5, 10, 1, 6, 72, 9, 50];
+// Estado da árvore (inicia com valores e conteúdos)
+let treeData = [
+    { value: 8, content: "Conteúdo do nó 8" },
+    { value: 12, content: "Conteúdo do nó 12" },
+    { value: 5, content: "Conteúdo do nó 5" },
+    { value: 10, content: "Conteúdo do nó 10" },
+    { value: 1, content: "Conteúdo do nó 1" },
+    { value: 6, content: "Conteúdo do nó 6" },
+    { value: 72, content: "Conteúdo do nó 72" },
+    { value: 9, content: "Conteúdo do nó 9" },
+    { value: 50, content: "Conteúdo do nó 50" }
+];
 
+// Caminhos dos arquivos
 const publicDir = path.join(__dirname, 'public');
 const cFile = path.join(__dirname, 'arvore.c');
 const exeFile = path.join(__dirname, process.platform === 'win32' ? 'arvore.exe' : 'arvore');
@@ -19,6 +31,9 @@ const publicJson = path.join(publicDir, 'tree.json');
 app.use(express.static(publicDir));
 app.use(express.json());
 
+/**
+ * Compila e executa o programa C para gerar a árvore e os arquivos.
+ */
 async function generateTree() {
     try {
         await execPromise(`gcc "${cFile}" -o "${exeFile}" -lm`);
@@ -28,18 +43,10 @@ async function generateTree() {
         throw new Error('Erro ao compilar o código C.');
     }
 
-    const files = fs.readdirSync(__dirname);
-    files.forEach(file => {
-        if (file.startsWith('node_') && file.endsWith('.txt')) {
-            try {
-                fs.unlinkSync(path.join(__dirname, file));
-            } catch (err) {
-                console.warn(`Não foi possível remover o arquivo antigo: ${file}`);
-            }
-        }
-    });
+    // Monta os argumentos para o programa C, escapando o conteúdo para a linha de comando.
+    const args = treeData.map(d => `${d.value} "${d.content.replace(/"/g, '\\"')}"`).join(' ');
+    const command = `"${exeFile}" ${args}`;
 
-    const command = `"${exeFile}" ${treeValues.join(' ')}`;
     try {
         const { stdout } = await execPromise(command);
         console.log('Execução do programa C:', stdout);
@@ -48,6 +55,7 @@ async function generateTree() {
         throw new Error('Erro ao executar o programa C para gerar a árvore.');
     }
 
+    // Move o tree.json gerado para a pasta /public
     const generatedJsonPath = path.join(__dirname, 'tree.json');
     if (fs.existsSync(generatedJsonPath)) {
         fs.renameSync(generatedJsonPath, publicJson);
@@ -59,63 +67,78 @@ async function generateTree() {
 }
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(publicDir, 'index.html'));
+    res.sendFile(path.join(publicDir, 'index.html'));
 });
 
-app.get('/generate', async (req, res) => {
-    try {
-        await generateTree();
-        res.status(200).json({ success: true, message: 'Árvore gerada com sucesso!' });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
+// ROTA PARA LER O CONTEÚDO DE UM ARQUIVO
+app.get('/file/:value', (req, res) => {
+    const value = req.params.value;
+    const filePath = path.join(__dirname, `node_${value}.txt`);
+
+    fs.readFile(filePath, 'utf8', (err, data) => {
+        if (err) {
+            return res.status(404).json({ success: false, message: 'Arquivo do nó não encontrado.' });
+        }
+        res.status(200).json({ success: true, content: data });
+    });
 });
 
+// ROTA DE INSERÇÃO ATUALIZADA
 app.post('/insert', async (req, res) => {
-    const value = parseInt(req.body.value, 10);
-    if (isNaN(value)) {
+    const { value, content } = req.body;
+    const numValue = parseInt(value, 10);
+
+    if (isNaN(numValue)) {
         return res.status(400).json({ success: false, message: 'Valor fornecido é inválido.' });
     }
-    if (treeValues.includes(value)) {
+    if (treeData.some(d => d.value === numValue)) {
         return res.status(409).json({ success: false, message: 'O valor já existe na árvore.' });
     }
 
-    treeValues.push(value);
+    treeData.push({ value: numValue, content: content || "" });
     try {
         await generateTree();
-        res.status(200).json({ success: true, message: `Valor ${value} inserido com sucesso!` });
+        res.status(200).json({ success: true, message: `Valor ${numValue} inserido com sucesso!` });
     } catch (error) {
-        treeValues = treeValues.filter(v => v !== value);
+        treeData = treeData.filter(d => d.value !== numValue);
         res.status(500).json({ success: false, message: error.message });
     }
 });
 
+// ROTA DE REMOÇÃO ATUALIZADA
 app.post('/delete', async (req, res) => {
     const value = parseInt(req.body.value, 10);
     if (isNaN(value)) {
         return res.status(400).json({ success: false, message: 'Valor fornecido é inválido.' });
     }
-    if (!treeValues.includes(value)) {
-        return res.status(404).json({ success: false, message: 'O valor não foi encontrado na árvore para remoção.' });
+    if (!treeData.some(d => d.value === value)) {
+        return res.status(404).json({ success: false, message: 'O valor não foi encontrado.' });
     }
 
-    const originalValues = [...treeValues];
-    treeValues = treeValues.filter(v => v !== value);
+    const originalData = [...treeData];
+    treeData = treeData.filter(d => d.value !== value);
+
+    // Deleta o arquivo físico do nó
+    const filePath = path.join(__dirname, `node_${value}.txt`);
+    if(fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+    }
+    
     try {
         await generateTree();
         res.status(200).json({ success: true, message: `Valor ${value} removido com sucesso!` });
     } catch (error) {
-        treeValues = originalValues;
+        treeData = originalData;
         res.status(500).json({ success: false, message: error.message });
     }
 });
 
 app.get('/search', (req, res) => {
     const value = parseInt(req.query.value, 10);
-     if (isNaN(value)) {
+    if (isNaN(value)) {
         return res.status(400).json({ found: false, message: 'Valor de busca inválido.' });
     }
-    const found = treeValues.includes(value);
+    const found = treeData.some(d => d.value === value);
     if (found) {
         res.status(200).json({ found: true, message: `O valor ${value} foi encontrado na árvore!` });
     } else {
@@ -123,10 +146,9 @@ app.get('/search', (req, res) => {
     }
 });
 
-
 app.listen(PORT, () => {
-  console.log(`Servidor rodando em http://localhost:${PORT}`);
-  generateTree().catch(err => {
-      console.error("Erro ao gerar a árvore inicial:", err);
-  });
+    console.log(`Servidor rodando em http://localhost:${PORT}`);
+    generateTree().catch(err => {
+        console.error("Erro ao gerar a árvore inicial:", err);
+    });
 });
