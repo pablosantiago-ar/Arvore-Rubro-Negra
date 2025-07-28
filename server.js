@@ -36,7 +36,7 @@ app.use(express.json());
  */
 async function generateTree() {
     try {
-        await execPromise(`gcc "${cFile}" -o "${exeFile}" -lm`);
+        await execPromise(`gcc "${cFile}" -std=c99 -o "${exeFile}" -lm`);
         console.log('Compilação bem-sucedida.');
     } catch (err) {
         console.error('Erro de compilação:', err.stderr);
